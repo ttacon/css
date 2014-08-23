@@ -19,21 +19,6 @@ func New(s *scanner.Scanner) *Parser {
 	}
 }
 
-func isEnd(t *scanner.Token) bool {
-	return t.Type == scanner.TokenError || t.Type == scanner.TokenEOF
-}
-
-func isBlockOpen(t *scanner.Token) bool {
-	if t.Type != scanner.TokenChar {
-		return false
-	}
-	return t.Value == "{" || t.Value == "[" || t.Value == "("
-}
-
-func isSemiColon(t *scanner.Token) bool {
-	return t.Type == scanner.TokenChar && t.Value == ";"
-}
-
 func (p *Parser) Parse() (*ast.Stylesheet, error) {
 	var (
 		t     = p.nextNonWhitespaceToken()
@@ -41,9 +26,7 @@ func (p *Parser) Parse() (*ast.Stylesheet, error) {
 	)
 	// TODO(ttacon): change to use channels/consumption
 	for ; !isEnd(t); t = p.nextNonWhitespaceToken() {
-		switch t.Type {
-		case scanner.TokenS: // just consume it
-		case scanner.TokenAtKeyword:
+		if isAtKeyword(t) {
 			// TODO(ttacon): pull out to own method
 			// at-rule     : ATKEYWORD S* any* [ block | ';' S* ];
 			// TODO(ttacon): this needs to actually comsume any
@@ -72,9 +55,12 @@ func (p *Parser) Parse() (*ast.Stylesheet, error) {
 				Block:     block,
 				JustSemi:  semiOnly,
 			})
-		case scanner.TokenChar:
+		} else if isSelector(t) {
 			// this should just be '.'
-			if t.Value != "." {
+			if t.Value != "." &&
+				!strings.HasPrefix(t.Value, "#") &&
+				t.Type != scanner.TokenIdent {
+
 				return nil, fmt.Errorf("expected '.', got %q", t.Value)
 			}
 
@@ -84,26 +70,7 @@ func (p *Parser) Parse() (*ast.Stylesheet, error) {
 			}
 
 			rules = append(rules, newRule)
-		case scanner.TokenHash:
-			// this should just be '#'
-			if !strings.HasPrefix(t.Value, "#") {
-				return nil, fmt.Errorf("expected '#', got %q", t.Value)
-			}
 
-			newRule, err := p.parseQualifiedRule(t)
-			if err != nil {
-				return nil, err
-			}
-
-			rules = append(rules, newRule)
-		case scanner.TokenIdent:
-			newRule, err := p.parseQualifiedRule(t)
-			if err != nil {
-				return nil, err
-			}
-			rules = append(rules, newRule)
-		default:
-			fmt.Println("default: ", t)
 		}
 	}
 	return &ast.Stylesheet{rules}, nil
@@ -330,10 +297,37 @@ func (p *Parser) parseBlock(t *scanner.Token) (*ast.Block, error) {
 	}, nil
 }
 
+// HELPERS ////////////////////////////////////////////////////////////
+
 func isClosingBrace(t *scanner.Token) bool {
 	return t.Type == scanner.TokenChar && t.Value == "}"
 }
 
 func isSpace(t *scanner.Token) bool {
 	return t.Type == scanner.TokenS
+}
+
+func isEnd(t *scanner.Token) bool {
+	return t.Type == scanner.TokenError || t.Type == scanner.TokenEOF
+}
+
+func isBlockOpen(t *scanner.Token) bool {
+	if t.Type != scanner.TokenChar {
+		return false
+	}
+	return t.Value == "{" || t.Value == "[" || t.Value == "("
+}
+
+func isSemiColon(t *scanner.Token) bool {
+	return t.Type == scanner.TokenChar && t.Value == ";"
+}
+
+func isAtKeyword(t *scanner.Token) bool {
+	return t.Type == scanner.TokenAtKeyword
+}
+
+func isSelector(t *scanner.Token) bool {
+	return (t.Type == scanner.TokenChar && t.Value == ".") ||
+		t.Type == scanner.TokenHash ||
+		t.Type == scanner.TokenIdent
 }
