@@ -213,29 +213,17 @@ func (p *Parser) parseQualifiedRule(entry *scanner.Token) (*ast.QualifiedRule, e
 	if err != nil {
 		return nil, err
 	}
-	var names []string
+	var names = []string{name}
 	t = p.nextNonWhitespaceToken()
-	for (t.Type == scanner.TokenChar && t.Value == ",") ||
-		t.Type == scanner.TokenIdent {
-
-		if t.Type == scanner.TokenIdent {
-			name = name + " " + t.Value
-			t = p.nextNonWhitespaceToken()
-			continue
-		}
-
-		names = append(names, name)
-
-		t, err = p.componentValue()
+	for t.Type == scanner.TokenChar && t.Value == "," {
+		sel, err := p.parseSelector(nil)
 		if err != nil {
 			return nil, err
 		}
 
-		name = t.Value
+		names = append(names, sel)
 		t = p.nextNonWhitespaceToken()
 	}
-
-	names = append(names, name)
 
 	block, err := p.parseBlock(t)
 
