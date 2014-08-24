@@ -231,6 +231,60 @@ func TestParse(t *testing.T) {
 				},
 			},
 		},
+		cssTest{
+			text: `
+@media print {
+  body {
+    font-size: 12pt;
+  }
+}
+
+.super-cool, #it-is-awesome {
+  border: 1px red solid;
+}
+`,
+			node: &ast.Stylesheet{
+				Children: []ast.Rule{
+					&ast.AtRule{
+						AtKeyword: "@media",
+						Any:       "print",
+						QualifiedRule: &ast.QualifiedRule{
+							Components: []*ast.ComponentValue{
+								&ast.ComponentValue{Name: "body"},
+							},
+							Block: &ast.Block{
+								DeclList: &ast.DeclarationList{
+									Declarations: []*ast.Declaration{
+										&ast.Declaration{
+											Ident:      "font-size",
+											Components: []string{"12pt"},
+										},
+									},
+								},
+							},
+						},
+						Block:    (*ast.Block)(nil),
+						JustSemi: false,
+					},
+					&ast.QualifiedRule{
+						Components: []*ast.ComponentValue{
+							&ast.ComponentValue{Name: ".super-cool"},
+							&ast.ComponentValue{Name: "#it-is-awesome"},
+						},
+						Block: &ast.Block{
+							DeclList: &ast.DeclarationList{
+								Declarations: []*ast.Declaration{
+									&ast.Declaration{
+										Ident:      "border",
+										Components: []string{"1px", "red", "solid"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
