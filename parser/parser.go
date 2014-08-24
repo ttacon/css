@@ -319,14 +319,6 @@ func (p *Parser) parseDeclaration(ident *scanner.Token) (*ast.Declaration, error
 	}, nil
 }
 
-func (p *Parser) squareBlock() (*scanner.Token, error) {
-	var t = p.nextNonWhitespaceToken()
-	for t.Type != scanner.TokenError && t.Type != scanner.TokenEOF {
-		t = p.nextNonWhitespaceToken()
-	}
-	return nil, nil
-}
-
 func (p *Parser) parenBlock() (*scanner.Token, error) {
 	return nil, nil
 }
