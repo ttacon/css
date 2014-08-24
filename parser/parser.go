@@ -319,10 +319,6 @@ func (p *Parser) parseDeclaration(ident *scanner.Token) (*ast.Declaration, error
 	}, nil
 }
 
-func (p *Parser) parenBlock() (*scanner.Token, error) {
-	return nil, nil
-}
-
 // HELPERS ////////////////////////////////////////////////////////////
 
 func isClosingBrace(t *scanner.Token) bool {
