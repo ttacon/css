@@ -2,9 +2,8 @@ package parser
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/ttacon/css/ast"
+
 	"github.com/ttacon/css/scanner"
 )
 
@@ -56,14 +55,6 @@ func (p *Parser) Parse() (*ast.Stylesheet, error) {
 				JustSemi:  semiOnly,
 			})
 		} else if isSelector(t) {
-			// this should just be '.'
-			if t.Value != "." &&
-				!strings.HasPrefix(t.Value, "#") &&
-				t.Type != scanner.TokenIdent {
-
-				return nil, fmt.Errorf("expected '.', got %q", t.Value)
-			}
-
 			newRule, err := p.parseQualifiedRule(t)
 			if err != nil {
 				return nil, err
@@ -76,32 +67,139 @@ func (p *Parser) Parse() (*ast.Stylesheet, error) {
 	return &ast.Stylesheet{rules}, nil
 }
 
+func (p *Parser) parseSelector(t *scanner.Token) (string, error) {
+	if t == nil {
+		t = p.nextNonWhitespaceToken()
+	}
+
+	var selector = t.Value
+
+	// TODO(ttacon): I don't think we need to do any sanity checking here
+	// it should be taken care of by callers of this method ... write tests
+	// to make sure
+	if t.Type == scanner.TokenChar {
+		// we need to consume the next token for the rest of
+		// the class identifier
+		t = p.nextNonWhitespaceToken()
+		if t.Type != scanner.TokenIdent {
+			return "", fmt.Errorf("expected an identifier, got %v", t)
+		}
+		selector += t.Value
+	}
+
+	t = p.peek()
+
+	// check for [, ( first
+	// TODO(ttacon): does this need to be a loop?
+	if t.Type == scanner.TokenChar && (t.Value == "(" || t.Value == "[") {
+		t = p.nextNonWhitespaceToken()
+		rest, err := p.parseRestOfSelector(t)
+		if err != nil {
+			return "", err
+		}
+		selector += rest
+	}
+
+	for isSelector(t) {
+		t = p.peek()
+		if !isSelector(t) {
+			break
+		}
+		t = p.nextNonWhitespaceToken()
+		compound, err := p.parseSelector(t)
+		if err != nil {
+			return "", err
+		}
+		selector += fmt.Sprintf(" %s", compound)
+	}
+	return selector, nil
+}
+
+func (p *Parser) parseRestOfSelector(t *scanner.Token) (string, error) {
+	var (
+		seen = []string{t.Value}
+		sel  = t.Value
+	)
+	t = p.s.Next()
+	for !closedRestOfSelector(seen, t) {
+		// we need to check and append, or close
+		if isBlockOpen(t) {
+			// TODO(ttacon): do we need to differentiate '{'?
+			seen = append(seen, t.Value)
+			sel += t.Value
+			t = p.s.Next()
+			continue
+		}
+
+		opening := openingBrace(t)
+		if opening == "" {
+			sel += t.Value
+			t = p.s.Next()
+			continue
+		}
+
+		if opening == seen[len(seen)-1] {
+			seen = seen[0 : len(seen)-1]
+		} else {
+			return "", fmt.Errorf("was expecting %q, saw %q",
+				seen[len(seen)-1],
+				opening)
+		}
+		sel += t.Value
+		t = p.s.Next()
+	}
+	if t.Type != scanner.TokenChar {
+		return "", fmt.Errorf("expected closing brace, got %v", t)
+	}
+
+	return sel + t.Value, nil
+}
+
+func closedRestOfSelector(seen []string, t *scanner.Token) bool {
+	opening := openingBrace(t)
+	if opening == "" {
+		return false
+	}
+
+	return len(seen) == 1 && opening == seen[0]
+}
+
+func openingBrace(t *scanner.Token) string {
+	if t.Type != scanner.TokenChar {
+		return ""
+	}
+
+	if t.Value == "]" {
+		return "["
+	} else if t.Value == ")" {
+		return "("
+	}
+	return ""
+}
+
+func (p *Parser) peek() *scanner.Token {
+	if len(p.cache) == 0 {
+		tok := p.nextNonWhitespaceToken()
+		p.cache = append(p.cache, tok)
+		return tok
+	}
+
+	return p.cache[0]
+}
+
 func (p *Parser) parseQualifiedRule(entry *scanner.Token) (ast.Rule, error) {
 	var (
 		t    = entry
 		name string
 	)
 
-	if entry.Type == scanner.TokenChar {
-		if entry.Value != "." {
-			// invalid starting token for rule/component
-			return nil, fmt.Errorf("expecting '.', got %s", entry.Value)
-		}
-		name = entry.Value
-		t = p.nextNonWhitespaceToken()
+	var err error
+	name, err = p.parseSelector(t)
+	if err != nil {
+		return nil, err
 	}
-
-	if entry.Type == scanner.TokenHash {
-		if !strings.HasPrefix(entry.Value, "#") {
-			// invalid starting token for rule/component
-			return nil, fmt.Errorf("expecting '#', got %s", entry.Value)
-		}
-	}
-
-	name = name + t.Value
 	var names []string
 	t = p.nextNonWhitespaceToken()
-	var err error
 	for (t.Type == scanner.TokenChar && t.Value == ",") ||
 		t.Type == scanner.TokenIdent {
 
@@ -145,11 +243,17 @@ func (p *Parser) parseQualifiedRule(entry *scanner.Token) (ast.Rule, error) {
 }
 
 func (p *Parser) nextNonWhitespaceToken() *scanner.Token {
-	var t = p.s.Next()
-	for t.Type == scanner.TokenS {
-		t = p.s.Next()
+	if len(p.cache) == 0 {
+		var t = p.s.Next()
+		for t.Type == scanner.TokenS {
+			t = p.s.Next()
+		}
+		return t
 	}
-	return t
+	tok := p.cache[0]
+	// TODO(ttacon): make cache not a slice but a pointer to a single token
+	p.cache = nil
+	return tok
 }
 
 func (p *Parser) parseDeclarations() (*ast.DeclarationList, error) {
@@ -268,7 +372,6 @@ func (p *Parser) componentValue() (*scanner.Token, error) {
 func (p *Parser) squareBlock() (*scanner.Token, error) {
 	var t = p.nextNonWhitespaceToken()
 	for t.Type != scanner.TokenError && t.Type != scanner.TokenEOF {
-		fmt.Println(t)
 		t = p.nextNonWhitespaceToken()
 	}
 	return nil, nil
