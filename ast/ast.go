@@ -16,15 +16,16 @@ type Rule interface {
 
 type AtRule struct {
 	// TODO(ttacon): atkeyword and any should be nodes...
-	AtKeyword string
-	Any       string
-	Block     *Block
-	JustSemi  bool
+	AtKeyword     string
+	Any           string
+	QualifiedRule *QualifiedRule
+	Block         *Block
+	JustSemi      bool
 }
 
 type QualifiedRule struct {
 	Components []*ComponentValue
-	DeclList   *DeclarationList
+	Block      *Block
 }
 
 type ComponentValue struct {

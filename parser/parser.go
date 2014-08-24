@@ -32,12 +32,13 @@ func (p *Parser) Parse() (*ast.Stylesheet, error) {
 			any := p.nextNonWhitespaceToken()
 
 			// sniff it
-			var block *ast.Block
+			var rule *ast.QualifiedRule
 			var err error
 			next := p.nextNonWhitespaceToken()
 			semiOnly := false
 			if isBlockOpen(next) {
-				block, err = p.parseBlock(next)
+				next = p.nextNonWhitespaceToken()
+				rule, err = p.parseQualifiedRule(next)
 				if err != nil {
 					return nil, err
 				}
@@ -49,10 +50,10 @@ func (p *Parser) Parse() (*ast.Stylesheet, error) {
 			}
 
 			rules = append(rules, &ast.AtRule{
-				AtKeyword: t.Value,
-				Any:       any.Value,
-				Block:     block,
-				JustSemi:  semiOnly,
+				AtKeyword:     t.Value,
+				Any:           any.Value,
+				QualifiedRule: rule,
+				JustSemi:      semiOnly,
 			})
 		} else if isSelector(t) {
 			newRule, err := p.parseQualifiedRule(t)
@@ -188,7 +189,7 @@ func (p *Parser) peek() *scanner.Token {
 	return p.cache[0]
 }
 
-func (p *Parser) parseQualifiedRule(entry *scanner.Token) (ast.Rule, error) {
+func (p *Parser) parseQualifiedRule(entry *scanner.Token) (*ast.QualifiedRule, error) {
 	var (
 		t    = entry
 		name string
@@ -387,25 +388,6 @@ func (p *Parser) squareBlock() (*scanner.Token, error) {
 
 func (p *Parser) parenBlock() (*scanner.Token, error) {
 	return nil, nil
-}
-
-func (p *Parser) parseBlock(t *scanner.Token) (*ast.Block, error) {
-	var vals []string
-	t = p.nextNonWhitespaceToken()
-
-	for ; !isEnd(t) && !isClosingBrace(t); t = p.nextNonWhitespaceToken() {
-		if !isSpace(t) {
-			vals = append(vals, t.Value)
-		}
-	}
-
-	if isEnd(t) {
-		return nil, fmt.Errorf("hit EOF/Error while parsing block")
-	}
-
-	return &ast.Block{
-		Components: vals,
-	}, nil
 }
 
 // HELPERS ////////////////////////////////////////////////////////////

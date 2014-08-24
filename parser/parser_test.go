@@ -25,11 +25,13 @@ func TestParse(t *testing.T) {
 						Components: []*ast.ComponentValue{
 							&ast.ComponentValue{Name: ".cool-name"},
 						},
-						DeclList: &ast.DeclarationList{
-							Declarations: []*ast.Declaration{
-								&ast.Declaration{
-									Ident:      "display",
-									Components: []string{"none"},
+						Block: &ast.Block{
+							DeclList: &ast.DeclarationList{
+								Declarations: []*ast.Declaration{
+									&ast.Declaration{
+										Ident:      "display",
+										Components: []string{"none"},
+									},
 								},
 							},
 						},
@@ -45,11 +47,13 @@ func TestParse(t *testing.T) {
 						Components: []*ast.ComponentValue{
 							&ast.ComponentValue{Name: ".cool-name"},
 						},
-						DeclList: &ast.DeclarationList{
-							Declarations: []*ast.Declaration{
-								&ast.Declaration{
-									Ident:      "display",
-									Components: []string{"none"},
+						Block: &ast.Block{
+							DeclList: &ast.DeclarationList{
+								Declarations: []*ast.Declaration{
+									&ast.Declaration{
+										Ident:      "display",
+										Components: []string{"none"},
+									},
 								},
 							},
 						},
@@ -65,15 +69,17 @@ func TestParse(t *testing.T) {
 						Components: []*ast.ComponentValue{
 							&ast.ComponentValue{Name: "#cool-name"},
 						},
-						DeclList: &ast.DeclarationList{
-							Declarations: []*ast.Declaration{
-								&ast.Declaration{
-									Ident:      "display",
-									Components: []string{"none"},
-								},
-								&ast.Declaration{
-									Ident:      "color",
-									Components: []string{"#fff"},
+						Block: &ast.Block{
+							DeclList: &ast.DeclarationList{
+								Declarations: []*ast.Declaration{
+									&ast.Declaration{
+										Ident:      "display",
+										Components: []string{"none"},
+									},
+									&ast.Declaration{
+										Ident:      "color",
+										Components: []string{"#fff"},
+									},
 								},
 							},
 						},
@@ -90,11 +96,13 @@ func TestParse(t *testing.T) {
 							&ast.ComponentValue{Name: "#cool-name"},
 							&ast.ComponentValue{Name: ".cool-name"},
 						},
-						DeclList: &ast.DeclarationList{
-							Declarations: []*ast.Declaration{
-								&ast.Declaration{
-									Ident:      "display",
-									Components: []string{"none"},
+						Block: &ast.Block{
+							DeclList: &ast.DeclarationList{
+								Declarations: []*ast.Declaration{
+									&ast.Declaration{
+										Ident:      "display",
+										Components: []string{"none"},
+									},
 								},
 							},
 						},
@@ -112,11 +120,13 @@ func TestParse(t *testing.T) {
 							&ast.ComponentValue{Name: "#cool-name"},
 							&ast.ComponentValue{Name: ".cool-name"},
 						},
-						DeclList: &ast.DeclarationList{
-							Declarations: []*ast.Declaration{
-								&ast.Declaration{
-									Ident:      "display",
-									Components: []string{"none"},
+						Block: &ast.Block{
+							DeclList: &ast.DeclarationList{
+								Declarations: []*ast.Declaration{
+									&ast.Declaration{
+										Ident:      "display",
+										Components: []string{"none"},
+									},
 								},
 							},
 						},
@@ -134,11 +144,13 @@ func TestParse(t *testing.T) {
 							&ast.ComponentValue{Name: "#cool-name"},
 							&ast.ComponentValue{Name: ".cool-name"},
 						},
-						DeclList: &ast.DeclarationList{
-							Declarations: []*ast.Declaration{
-								&ast.Declaration{
-									Ident:      "display",
-									Components: []string{"none"},
+						Block: &ast.Block{
+							DeclList: &ast.DeclarationList{
+								Declarations: []*ast.Declaration{
+									&ast.Declaration{
+										Ident:      "display",
+										Components: []string{"none"},
+									},
 								},
 							},
 						},
@@ -154,15 +166,17 @@ func TestParse(t *testing.T) {
 						Components: []*ast.ComponentValue{
 							&ast.ComponentValue{Name: `#cool-name[name="hello"]`},
 						},
-						DeclList: &ast.DeclarationList{
-							Declarations: []*ast.Declaration{
-								&ast.Declaration{
-									Ident:      "display",
-									Components: []string{"none"},
-								},
-								&ast.Declaration{
-									Ident:      "color",
-									Components: []string{"#fff"},
+						Block: &ast.Block{
+							DeclList: &ast.DeclarationList{
+								Declarations: []*ast.Declaration{
+									&ast.Declaration{
+										Ident:      "display",
+										Components: []string{"none"},
+									},
+									&ast.Declaration{
+										Ident:      "color",
+										Components: []string{"#fff"},
+									},
 								},
 							},
 						},
@@ -194,10 +208,25 @@ func TestParse(t *testing.T) {
 			node: &ast.Stylesheet{
 				Children: []ast.Rule{
 					&ast.AtRule{
-						AtKeyword: "@charset",
-						Any:       "\"UTF-8\"",
-						Block:     (*ast.Block)(nil),
-						JustSemi:  true,
+						AtKeyword: "@media",
+						Any:       "print",
+						QualifiedRule: &ast.QualifiedRule{
+							Components: []*ast.ComponentValue{
+								&ast.ComponentValue{Name: "body"},
+							},
+							Block: &ast.Block{
+								DeclList: &ast.DeclarationList{
+									Declarations: []*ast.Declaration{
+										&ast.Declaration{
+											Ident:      "font-size",
+											Components: []string{"12pt"},
+										},
+									},
+								},
+							},
+						},
+						Block:    (*ast.Block)(nil),
+						JustSemi: false,
 					},
 				},
 			},
