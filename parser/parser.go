@@ -28,7 +28,7 @@ func (p *Parser) Parse() (*ast.Stylesheet, error) {
 		if isAtKeyword(t) {
 			// TODO(ttacon): pull out to own method
 			// at-rule     : ATKEYWORD S* any* [ block | ';' S* ];
-			// TODO(ttacon): this needs to actually comsume any
+			// TODO(ttacon): this needs to actually consume any
 			any := p.nextNonWhitespaceToken()
 
 			// sniff it
@@ -105,6 +105,7 @@ func (p *Parser) parseSelector(t *scanner.Token) (string, error) {
 		if !isSelector(t) {
 			break
 		}
+
 		t = p.nextNonWhitespaceToken()
 		compound, err := p.parseSelector(t)
 		if err != nil {
