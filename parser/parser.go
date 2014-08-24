@@ -32,8 +32,10 @@ func (p *Parser) Parse() (*ast.Stylesheet, error) {
 			any := p.nextNonWhitespaceToken()
 
 			// sniff it
-			var rule *ast.QualifiedRule
-			var err error
+			var (
+				rule *ast.QualifiedRule
+				err  error
+			)
 			next := p.nextNonWhitespaceToken()
 			semiOnly := false
 			if isBlockOpen(next) {
