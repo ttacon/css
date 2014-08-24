@@ -92,9 +92,17 @@ func (p *Parser) parseSelector(t *scanner.Token) (string, error) {
 
 	t = p.peek()
 
+	// sniff for ':'
+	if t.Type == scanner.TokenChar && t.Value == ":" {
+		t = p.nextNonWhitespaceToken()
+		selector += ":"
+		t = p.peek()
+	}
+
 	// check for [, ( first
 	// TODO(ttacon): does this need to be a loop?
-	if t.Type == scanner.TokenChar && (t.Value == "(" || t.Value == "[") {
+	if (t.Type == scanner.TokenChar && (t.Value == "(" || t.Value == "[")) ||
+		t.Type == scanner.TokenFunction {
 		t = p.nextNonWhitespaceToken()
 		rest, err := p.parseRestOfSelector(t)
 		if err != nil {
@@ -124,6 +132,9 @@ func (p *Parser) parseRestOfSelector(t *scanner.Token) (string, error) {
 		seen = []string{t.Value}
 		sel  = t.Value
 	)
+	if t.Type == scanner.TokenFunction {
+		seen = []string{"("}
+	}
 	t = p.s.Next()
 	for !closedRestOfSelector(seen, t) {
 		// we need to check and append, or close

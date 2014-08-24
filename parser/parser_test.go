@@ -285,6 +285,32 @@ func TestParse(t *testing.T) {
 				},
 			},
 		},
+		cssTest{
+			text: `
+p:nth-child(2) {
+    background: #ff0000;
+}
+`,
+			node: &ast.Stylesheet{
+				Children: []ast.Rule{
+					&ast.QualifiedRule{
+						Components: []*ast.ComponentValue{
+							&ast.ComponentValue{Name: "p:nth-child(2)"},
+						},
+						Block: &ast.Block{
+							DeclList: &ast.DeclarationList{
+								Declarations: []*ast.Declaration{
+									&ast.Declaration{
+										Ident:      "background",
+										Components: []string{"#ff0000"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
