@@ -319,66 +319,6 @@ func (p *Parser) parseDeclaration(ident *scanner.Token) (*ast.Declaration, error
 	}, nil
 }
 
-func (p *Parser) componentValue() (*scanner.Token, error) {
-	// TODO(ttacon): this can't return string ({}, (), [], func too)
-	// TODO(ttacon): this whole function is a dirty, dirty hack... :(
-	t := p.nextNonWhitespaceToken()
-	if t.Type == scanner.TokenChar { // it's a '.'
-		// TODO(ttacon): this should just be Next() and check the type is
-		// an identifier
-		var next *scanner.Token
-		var err error
-		switch t.Value {
-		case ".":
-			next = p.nextNonWhitespaceToken()
-		case "{": // is this valid here?
-			next, err = p.componentValue() // TODO(ttacon): is this right?
-			if err != nil {
-				return nil, err
-			}
-			next.Value = t.Value + next.Value
-			t = next
-			next = p.nextNonWhitespaceToken()
-			if next.Type != scanner.TokenChar || next.Value != "}" {
-				return nil, fmt.Errorf("expected '}', got %s", next.Value)
-			}
-			next.Value = t.Value + next.Value
-			t = next
-		case "[":
-			next, err = p.squareBlock()
-			if err != nil {
-				return nil, err
-			}
-			next.Value = t.Value + next.Value
-			t = next
-			next = p.nextNonWhitespaceToken()
-			if next.Type != scanner.TokenChar || next.Value != "]" {
-				return nil, fmt.Errorf("expected ']', got %s", next.Value)
-			}
-			next.Value = t.Value + next.Value
-			t = next
-		case "(":
-			next, err = p.parenBlock()
-			if err != nil {
-				return nil, err
-			}
-			next.Value = t.Value + next.Value
-			t = next
-			next = p.nextNonWhitespaceToken()
-			if next.Type != scanner.TokenChar || next.Value != ")" {
-				return nil, fmt.Errorf("expected ')', got %s", next.Value)
-			}
-			next.Value = t.Value + next.Value
-			t = next
-		}
-		next.Value = t.Value + next.Value
-		t = next
-
-	}
-
-	return t, nil
-}
-
 func (p *Parser) squareBlock() (*scanner.Token, error) {
 	var t = p.nextNonWhitespaceToken()
 	for t.Type != scanner.TokenError && t.Type != scanner.TokenEOF {
