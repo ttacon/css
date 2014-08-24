@@ -223,14 +223,7 @@ func (p *Parser) parseQualifiedRule(entry *scanner.Token) (ast.Rule, error) {
 
 	names = append(names, name)
 
-	if t.Value != "{" {
-		return nil, fmt.Errorf("expected '{', got %q", t.Value)
-	}
-
-	decls, err := p.parseDeclarations()
-	if err != nil {
-		return nil, err
-	}
+	block, err := p.parseBlock(t)
 
 	var components = make([]*ast.ComponentValue, len(names))
 	for i, name := range names {
@@ -239,7 +232,21 @@ func (p *Parser) parseQualifiedRule(entry *scanner.Token) (ast.Rule, error) {
 
 	return &ast.QualifiedRule{
 		Components: components,
-		DeclList:   decls,
+		Block:      block,
+	}, nil
+}
+
+func (p *Parser) parseBlock(t *scanner.Token) (*ast.Block, error) {
+	if t.Value != "{" {
+		return nil, fmt.Errorf("expected '{', got %q", t.Value)
+	}
+
+	decls, err := p.parseDeclarations()
+	if err != nil {
+		return nil, err
+	}
+	return &ast.Block{
+		DeclList: decls,
 	}, nil
 }
 

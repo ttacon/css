@@ -57,5 +57,5 @@ type FunctionBlock struct {
 
 type Block struct {
 	// TODO(ttacon): this needs to be updated
-	Components []string
+	DeclList *DeclarationList
 }
